@@ -1,0 +1,375 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "API de Ejemplo",
+      "description": "Esta es una API de ejemplo para gestionar usuarios y tareas.",
+      "version": "1.0.0"
+    },
+    "host": "localhost:5000",
+    "basePath": "/",
+    "schemes": [
+      "http"
+    ],
+    "paths": {
+      "/": {
+        "get": {
+          "summary": "Obtener toda la base de datos",
+          "description": "Devuelve un json de toda la base de datos.",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "DB devuelta exitosamente.",
+              "schema": {
+                "type": "array",
+                "items": {
+                    "oneOf": [
+                        {
+                            "$ref": "#/definitions/User"
+                        },
+                        {
+                            "$ref": "#/definitions/Task"
+                        }
+            ]
+          }
+              }
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        }
+      },
+      "/users": {
+        "get": {
+          "summary": "Obtener todos los usuarios",
+          "description": "Devuelve un json de todos los usuarios.",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Lista de usuarios devuelta exitosamente.",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/User"
+                }
+              }
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        },
+        "post": {
+          "summary": "Crear un nuevo usuario",
+          "description": "Registra un nuevo usuario en la base de datos.",
+          "consumes": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "user",
+              "in": "body",
+              "required": true,
+              "description": "datos del usuario a registrar",
+              "schema": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Usuario registrado con exito."
+            },
+            "400": {
+              "description": "Solicitud incorrecta."
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        }
+      },
+      "/tasks": {
+        "get": {
+          "summary": "Obtener todas las tareas",
+          "description": "Devuelve un json de todas las tareas.",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Lista de tareas devuelta exitosamente.",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Task"
+                }
+              }
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        },
+        "post": {
+          "summary": "Crear una nueva tarea",
+          "description": "Registra una nueva tarea en la base de datos.",
+          "consumes": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "task",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Task"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Tarea registrada con exito."
+            },
+            "400": {
+              "description": "Solicitud incorrecta."
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        }
+      },
+      "/users/{id}": {
+        "get": {
+          "summary": "Obtener datos del usuario que tenga el id que esta en la ruta",
+          "description": "Devuelve un json del usuario con el id indicado.",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "integer",
+              "description": "Id del usuario que quiere obtener"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Usuario devuelto exitosamente.",
+              "schema": {
+                "$ref": "#/definitions/User"
+              }
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        },
+        "put": {
+          "summary": "Actualizar un usuario",
+          "description": "Actualiza un usuario en la base de datos.",
+          "consumes": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "integer",
+              "description": "Id del usuario que quiere actualizar"
+            },
+            {
+              "name": "user",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Usuario actualizado con exito."
+            },
+            "400": {
+              "description": "Solicitud incorrecta."
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        },
+        "delete": {
+          "summary": "Eliminar un usuario",
+          "description": "Elimina un usuario en la base de datos.",
+          "consumes": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "integer",
+              "description": "Id del usuario que quiere eliminar"
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Usuario eliminado con exito."
+            },
+            "400": {
+              "description": "Solicitud incorrecta."
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        }
+      },
+      "/tasks/{id}": {
+        "get": {
+          "summary": "Obtener datos de la tarea que tenga el id que esta en la ruta",
+          "description": "Devuelve un json de la tarea con el id indicado.",
+          "produces": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "integer",
+              "description": "Id de la tarea que quiere obtener"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Tarea devuelta exitosamente.",
+              "schema": {
+                "$ref": "#/definitions/Task"
+              }
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        },
+        "put": {
+          "summary": "Actualizar una tarea",
+          "description": "Actualiza una tarea en la base de datos.",
+          "consumes": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "integer",
+              "description": "Id de la tarea que quiere actualizar"
+            },
+            {
+              "name": "task",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Task"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Tarea actualizada con exito."
+            },
+            "400": {
+              "description": "Solicitud incorrecta."
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        },
+        "delete": {
+          "summary": "Eliminar una tarea",
+          "description": "Elimina una tarea en la base de datos.",
+          "consumes": [
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "type": "integer",
+              "description": "Id de la tarea que quiere eliminar"
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "Tarea eliminada con exito."
+            },
+            "400": {
+              "description": "Solicitud incorrecta."
+            },
+            "500": {
+              "description": "Error interno del servidor."
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "userID": {
+            "type": "integer",
+            "example": 1
+          },
+          "userName": {
+            "type": "string",
+            "example": "Juan Perez"
+          },
+          "email": {
+            "type": "string",
+            "example": "juan.perez@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "contraseña123"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "taskID": {
+            "type": "integer",
+            "example": 1
+          },
+          "userID": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Hacer la comida"
+          },
+          "description": {
+            "type": "string",
+            "example": "Prender el horno y poner la carne adentro, dejarla cocinar 40min horno 180grados"
+          }
+        }
+      }
+    }
+  }
+  
