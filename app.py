@@ -25,7 +25,7 @@ swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
     config={  # Configuración de Swagger UI
-        'app_name': "Api de ejemplo"
+        'app_name': "Api lista de tareas"
     },
 )
 
