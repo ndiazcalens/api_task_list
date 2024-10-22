@@ -1,67 +1,63 @@
 from flask import Flask, request, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
-from flask_mysqldb import MySQL
-from config import config
+import psycopg2
 import os
+from config import config
 
-app=Flask(__name__)
 
-conexion= MySQL(app)
+app = Flask(__name__)
 
-SWAGGER_URL = '/api/docs'  # URL for exposing Swagger UI (without trailing '/')
-#API_URL = 'http://petstore.swagger.io/v2/swagger.json'  # Our API url (can of course be a local resource)
+# Configuración de conexión a PostgreSQL
+def get_db_connection():
+    conn = psycopg2.connect(
+        host=os.getenv("PG_HOST", "localhost"),
+        database=os.getenv("PG_DB", "tasks_db"),
+        user=os.getenv("PG_USER", "postgres"),  
+        password=os.getenv("PG_PASSWORD", ""),
+        port=os.getenv("PG_PORT", "6543") 
+    )
+    return conn
+
+SWAGGER_URL = '/api/docs'  # URL para exponer Swagger UI (sin barra al final)
 API_URL = "/static/swagger.json"
 
-
-
 swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,  # Swagger UI static files will be mapped to '{SWAGGER_URL}/dist/'
+    SWAGGER_URL,
     API_URL,
-    config={  # Swagger UI config overrides
+    config={  # Configuración de Swagger UI
         'app_name': "Api de ejemplo"
     },
-    # oauth_config={  # OAuth config. See https://github.com/swagger-api/swagger-ui#oauth2-configuration .
-    #    'clientId': "your-client-id",
-    #    'clientSecret': "your-client-secret-if-required",
-    #    'realm': "your-realms",
-    #    'appName': "your-app-name",
-    #    'scopeSeparator': " ",
-    #    'additionalQueryStringParams': {'test': "hello"}
-    # }
 )
 
 app.register_blueprint(swaggerui_blueprint)
 
 
-
-
 @app.route("/", methods=['GET'])
 def mostrar_db():
-    try: 
-        cursor= conexion.connection.cursor()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-        sqlTasks= "SELECT * FROM `tasks`"
+        sqlTasks = "SELECT * FROM tasks"
         cursor.execute(sqlTasks)
-        tasks= cursor.fetchall()
+        tasks = cursor.fetchall()
 
-        sqlUsers= "SELECT * FROM `users`"
+        sqlUsers = "SELECT * FROM users"
         cursor.execute(sqlUsers)
-        users= cursor.fetchall()
+        users = cursor.fetchall()
 
-        respuesta= {
-            "tasks":[],
+        respuesta = {
+            "tasks": [],
             "users": []
         }
         for task in tasks:
             respuesta["tasks"].append({
-                "tasksID": task[0],
-                "userID":task[1],
+                "taskID": task[0],
+                "userID": task[1],
                 "title": task[2],
                 "description": task[3]
-                })
-# Itera sobre cada usuario en la lista de usuarios y agrega sus datos a la respuesta.
-# Cada usuario se representa como un diccionario con los campos userID, userName y email.
-# Se pueden agregar mas campos segun el esquema de tu base de datos.
+            })
+
         for user in users:
             respuesta["users"].append({
                 "userID": user[0],
@@ -70,128 +66,149 @@ def mostrar_db():
                 "password": user[3]
             })
 
+        cursor.close()
+        conn.close()
         return jsonify(respuesta)
     except Exception as ex:
         print(ex)
         return jsonify({"msj": "Error"})
 
 
-@app.route("/<tabla>", methods= ['GET'])
+@app.route("/<tabla>", methods=['GET'])
 def mostrar_tabla(tabla):
-    try: 
-        cursor= conexion.connection.cursor()
-        sql= "SELECT * FROM `{0}`;".format(tabla)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        sql = "SELECT * FROM {};".format(tabla)
         cursor.execute(sql)
-        datos= cursor.fetchall()
-        if datos is not None and len(datos)>0:
-            respuesta={
+        datos = cursor.fetchall()
+        if datos:
+            respuesta = {
                 "datos": datos
-                }
+            }
         else:
-            respuesta= {
-            "msj": "No hay datos"
-        }
+            respuesta = {
+                "msj": "No hay datos"
+            }
+        cursor.close()
+        conn.close()
         return jsonify(respuesta)
     except Exception as ex:
         print(ex)
-        return jsonify({"msj": "Error"}),500
+        return jsonify({"msj": "Error"}), 500
 
 
-
-@app.route("/<tabla>", methods= ['POST'])
+@app.route("/<tabla>", methods=['POST'])
 def nuevo_dato(tabla):
     try:
-        cursor= conexion.connection.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         if tabla == "users":
-            sql= """INSERT INTO users (`userName`,`email`,`password`) VALUES 
+            sql = """INSERT INTO users (userName, email, password) VALUES 
             (%s, %s, %s);"""
-            values=(
+            values = (
                 request.json["userName"],
                 request.json["email"],
                 request.json["password"]
-                )
+            )
             cursor.execute(sql, values)
-            conexion.connection.commit()
-            return jsonify({"msj": "Usuario registrado con exito"})
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"msj": "Usuario registrado con éxito"})
         elif tabla == "tasks":
-            userID= request.json["userID"]
+            userID = request.json["userID"]
             cursor.execute("SELECT * FROM users WHERE userID = %s", (userID,))
             user = cursor.fetchone()
-            if user == None:
-                 return jsonify({"msj": "El userID no existe. Inserte un usuario existente."})
-            sql= """INSERT INTO tasks (`userID`,`title`,`description`) VALUES 
-            (%s, %s, %s);"""#aca use placeholders (%s) que cada espacio despues es reemplazado por el valor en vaules
-            values= (
-            request.json["userID"],
-            request.json["title"],
-            request.json["description"])
+            if user is None:
+                return jsonify({"msj": "El userID no existe. Inserte un usuario existente."})
+            sql = """INSERT INTO tasks (userID, title, description) VALUES 
+            (%s, %s, %s);"""
+            values = (
+                request.json["userID"],
+                request.json["title"],
+                request.json["description"]
+            )
             cursor.execute(sql, values)
-            conexion.connection.commit()
-            return jsonify({"msj": "Tarea registrada con exito"})
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"msj": "Tarea registrada con éxito"})
         else:
-            return jsonify({"msj": "Tabla no encontrada"}),400
+            return jsonify({"msj": "Tabla no encontrada"}), 400
     except Exception as ex:
         print(ex)
-        return jsonify({"msj": "Error"}),500
+        return jsonify({"msj": "Error"}), 500
 
 
 @app.route("/<tabla>/<id>", methods=['PUT'])
 def actualizar(tabla, id):
     try:
-        cursor= conexion.connection.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         if tabla == "users":
-            sql= "UPDATE users SET userName= %s, email= %s, password= %s WHERE userID = %s"
-            values= (
+            sql = "UPDATE users SET userName= %s, email= %s, password= %s WHERE userID = %s"
+            values = (
                 request.json["userName"],
                 request.json["email"],
                 request.json["password"],
                 id
             )
-            cursor.execute(sql,values)
-            conexion.connection.commit()
-            return (jsonify({"msj": "Usuario actualizado con exito"}))
+            cursor.execute(sql, values)
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"msj": "Usuario actualizado con éxito"})
         elif tabla == "tasks":
-            sql= "UPDATE tasks SET title= %s, description= %s WHERE taskID = %s"
-            values= (
+            sql = "UPDATE tasks SET title= %s, description= %s WHERE taskID = %s"
+            values = (
                 request.json["title"],
                 request.json["description"],
                 id
             )
-            cursor.execute(sql,values)
-            conexion.connection.commit()
-            return (jsonify({"msj": "Tarea actualizada con exito"}))
+            cursor.execute(sql, values)
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"msj": "Tarea actualizada con éxito"})
         else:
-            return (jsonify({"msj": "La tabla no existe"})),400
+            return jsonify({"msj": "La tabla no existe"}), 400
     except Exception as ex:
         print(ex)
-        return jsonify({"msj":"Error"}),500
+        return jsonify({"msj": "Error"}), 500
 
 
-
-@app.route("/<tabla>/<id>", methods= ['DELETE'])
-def eliminar(tabla,id):
+@app.route("/<tabla>/<id>", methods=['DELETE'])
+def eliminar(tabla, id):
     try:
-        cursor= conexion.connection.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
         if tabla == "users":
-            sql= "DELETE FROM users WHERE userID= %s"
-            values= (id,)
-            cursor.execute(sql,values)
-            conexion.connection.commit()
-            return(jsonify({"msj": "Usuario eliminado con exito"}))
+            sql = "DELETE FROM users WHERE userID= %s"
+            values = (id,)
+            cursor.execute(sql, values)
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"msj": "Usuario eliminado con éxito"})
         elif tabla == "tasks":
-            sql= "DELETE FROM tasks WHERE taskID= %s"
-            values= (id,)
-            cursor.execute(sql,values)
-            conexion.connection.commit()
-            return(jsonify({"msj": "Tarea eliminada con exito"}))
+            sql = "DELETE FROM tasks WHERE taskID= %s"
+            values = (id,)
+            cursor.execute(sql, values)
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"msj": "Tarea eliminada con éxito"})
         else:
-            return(jsonify({"msj": "Ingrese un valor correcto"}))
+            return jsonify({"msj": "Ingrese un valor correcto"}), 400
     except Exception as ex:
         print(ex)
-        return (jsonify({"msj":"Error"}))
+        return jsonify({"msj": "Error"})
+
 
 def pagina_error(error):
-    return ("Error"), 404
+    return "Error", 404
+
 
 if __name__ == "__main__":
     app.config.from_object(config["development"])

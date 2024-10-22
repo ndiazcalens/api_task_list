@@ -1,12 +1,18 @@
 import os
+from dotenv import load_dotenv
+
+# Cargar las variables de entorno desde un archivo .env si existe
+load_dotenv()
 
 class DevelopmentConfig():
     DEBUG = True
-    MYSQL_HOST = os.getenv("(la URL o IP de tu base de datos en Railway)", "localhost")  # Usa localhost como valor por defecto para desarrollo local
-    MYSQL_USER = os.getenv("(el usuario de la base de datos)", "root")        # Usa "root" como valor por defecto para desarrollo local
-    MYSQL_PASSWORD = os.getenv("(la contraseña de la base de datos)", "")     # Usa una cadena vacía como valor por defecto
-    MYSQL_DB = os.getenv("MYSQL_DB", "tasks_db")        # Usa "tasks_db" como valor por defecto para desarrollo local
+    PG_HOST = os.getenv("PG_HOST", "localhost")
+    PG_USER = os.getenv("PG_USER", "postgres")
+    PG_PASSWORD = os.getenv("PG_PASSWORD", "")
+    PG_DB = os.getenv("PG_DB", "tasks_db")
+    PG_PORT = os.getenv("PG_PORT", "6543")
 
+# Configuración general de la aplicación
 config = {
     "development": DevelopmentConfig
 }
