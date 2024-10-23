@@ -3,7 +3,9 @@ from flask_swagger_ui import get_swaggerui_blueprint
 import psycopg2
 import os
 from config import config
+from dotenv import load_dotenv
 
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -17,6 +19,9 @@ def get_db_connection():
         port=os.getenv("PG_PORT", "6543") 
     )
     return conn
+
+
+print("PG_USER:", os.getenv("PG_USER"))
 
 SWAGGER_URL = '/api/docs'  # URL para exponer Swagger UI (sin barra al final)
 API_URL = "/static/swagger.json"
